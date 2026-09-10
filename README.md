@@ -11,16 +11,28 @@ temática de futebol da torcida alvinegra (Corinthians). Trabalho da disciplina 
 - Ao final do giro, o jogo verifica **linhas horizontais** e **diagonais**: três
   símbolos iguais resultam em prêmio (`aposta × multiplicador do símbolo`).
 - Animação com **parada progressiva** das colunas (1s, 1.5s e 2s).
+- As imagens **preenchem toda a célula** (fill) e a **linha vencedora pisca**.
+
+## ✨ Recursos extras
+
+- 🔁 **Modo AUTO**: gira automaticamente até você parar ou acabar o saldo.
+- 🔊 **Efeitos sonoros** sintetizados (giro, vitória e bônus) — sem arquivos externos.
+- 💚 **Destaque da linha vencedora**: as células que formaram a combinação piscam.
+- 🎚️ **Dificuldade** (Fácil / Normal / Difícil): muda o saldo inicial e o retorno do jogo.
+- 🎁 **Rodadas Grátis (Free Spins)**: 3+ Gaviões na grade concedem 5 giros grátis.
 
 ## 🏆 Símbolos e multiplicadores
 
 | Símbolo          | Multiplicador |
 |------------------|:-------------:|
-| Gavião da Fiel   | x100          |
-| Mosqueteiro      | x50           |
-| Símbolo Antigo   | x30           |
-| Escudo Oficial   | x20           |
-| Memphis          | x15           |
+| Gavião da Fiel   | x25           |
+| Mosqueteiro      | x12           |
+| Símbolo Antigo   | x8            |
+| Escudo Oficial   | x5            |
+| Memphis          | x3            |
+
+> O prêmio final também é ajustado por um **fator de dificuldade** (o modo
+> Difícil paga menos), mantendo o jogo equilibrado.
 
 ## 🧱 Organização do código (POO / MVC)
 
@@ -29,13 +41,18 @@ src/
 ├── Main.java                     # Ponto de entrada
 ├── model/                        # Regras de negócio (sem interface gráfica)
 │   ├── Simbolo.java              # Enum: símbolos, imagens e multiplicadores
-│   ├── Jogador.java              # Saldo, aposta, débito e crédito
+│   ├── Jogador.java              # Saldo, aposta, rodadas grátis, débito/crédito
+│   ├── Dificuldade.java          # Níveis (saldo inicial + fator de pagamento)
+│   ├── ResultadoGiro.java        # Prêmio, posições vencedoras e free spins
 │   └── MotorDoJogo.java          # Sorteio (Random) + verificação de vitória
 ├── view/                         # Interface gráfica (Swing)
 │   ├── TelaPrincipal.java        # JFrame (BorderLayout + GridLayout)
-│   └── CarregadorImagens.java    # getResource() com fallback desenhado
+│   ├── CelulaSimbolo.java        # Célula que desenha a imagem em fill + destaque
+│   ├── CarregadorImagens.java    # getResource() com fallback desenhado
+│   ├── Tema.java                 # Paleta de cores (cinza-carvão + branco)
+│   └── Som.java                  # Efeitos sonoros sintetizados
 ├── controller/
-│   └── ControladorJogo.java      # Eventos + animação (javax.swing.Timer)
+│   └── ControladorJogo.java      # Eventos + animação + AUTO + free spins
 └── recursos/imagens/             # Imagens dos símbolos
 ```
 

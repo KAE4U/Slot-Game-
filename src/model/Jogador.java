@@ -4,7 +4,7 @@ package model;
  * Representa o jogador e seu saldo de créditos de demonstração.
  *
  * Responsabilidades:
- *  - guardar o saldo atual e o valor da aposta;
+ *  - guardar o saldo atual, o valor da aposta e as rodadas grátis;
  *  - validar se há créditos suficientes para girar;
  *  - debitar a aposta e creditar prêmios.
  *
@@ -12,18 +12,16 @@ package model;
  */
 public class Jogador {
 
-    /** Saldo inicial padrão de créditos de demonstração. */
-    public static final double SALDO_INICIAL = 100.0;
-
     /** Valor mínimo e máximo de aposta permitidos. */
     public static final double APOSTA_MINIMA = 1.0;
     public static final double APOSTA_MAXIMA = 50.0;
 
     private double saldo;
     private double aposta;
+    private int rodadasGratis;
 
-    public Jogador() {
-        this.saldo = SALDO_INICIAL;
+    public Jogador(Dificuldade dificuldade) {
+        this.saldo = dificuldade.getSaldoInicial();
         this.aposta = APOSTA_MINIMA * 5; // aposta inicial de R$ 5,00
     }
 
@@ -33,6 +31,10 @@ public class Jogador {
 
     public double getAposta() {
         return aposta;
+    }
+
+    public int getRodadasGratis() {
+        return rodadasGratis;
     }
 
     /**
@@ -61,14 +63,34 @@ public class Jogador {
         setAposta(maximo);
     }
 
-    /** Verifica se o jogador tem saldo suficiente para cobrir a aposta atual. */
-    public boolean temSaldoSuficiente() {
-        return saldo >= aposta;
+    /** Indica se o jogador possui rodadas grátis disponíveis. */
+    public boolean temRodadasGratis() {
+        return rodadasGratis > 0;
+    }
+
+    /** Adiciona rodadas grátis (bônus de Free Spins). */
+    public void adicionarRodadasGratis(int quantidade) {
+        this.rodadasGratis += quantidade;
+    }
+
+    /** Consome uma rodada grátis. */
+    public void consumirRodadaGratis() {
+        if (rodadasGratis > 0) {
+            rodadasGratis--;
+        }
     }
 
     /**
-     * Debita a aposta do saldo. Deve ser chamado apenas quando
-     * {@link #temSaldoSuficiente()} for verdadeiro.
+     * Verifica se o jogador pode girar: tem rodada grátis OU saldo suficiente
+     * para cobrir a aposta atual.
+     */
+    public boolean podeGirar() {
+        return temRodadasGratis() || saldo >= aposta;
+    }
+
+    /**
+     * Debita a aposta do saldo. Deve ser chamado apenas quando o giro é pago
+     * (isto é, quando não está usando rodada grátis).
      */
     public void debitarAposta() {
         this.saldo -= aposta;

@@ -1,14 +1,13 @@
 package controller;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
 
+import model.Dificuldade;
 import model.Jogador;
 import model.MotorDoJogo;
-import model.Simbolo;
+import model.ResultadoGiro;
+import view.Som;
 import view.TelaPrincipal;
 
 /**
@@ -16,9 +15,11 @@ import view.TelaPrincipal;
  *
  * Liga a interface gráfica ({@link TelaPrincipal}) às regras de negócio
  * ({@link Jogador} e {@link MotorDoJogo}). Concentra:
- *  - o tratamento dos eventos dos botões;
- *  - a animação dos rolos com parada progressiva usando {@link javax.swing.Timer};
- *  - o desconto da aposta, o alerta de saldo insuficiente e o cálculo do prêmio.
+ *  - o tratamento dos eventos dos botões e do seletor de dificuldade;
+ *  - a animação dos rolos com parada progressiva via {@link javax.swing.Timer};
+ *  - o desconto da aposta, o alerta de saldo insuficiente e o cálculo do prêmio;
+ *  - os recursos extras: modo AUTO, efeitos sonoros, destaque da linha
+ *    vencedora e rodadas grátis (Free Spins).
  *
  * A modularização segue a especificação: cada responsabilidade fica em um
  * método próprio, evitando concentrar tudo no escutador do botão.
@@ -34,8 +35,15 @@ public class ControladorJogo {
     /** Passo de ajuste da aposta com os botões +/-. */
     private static final double PASSO_APOSTA = 1.0;
 
+    /** Intervalo entre giros no modo automático (ms). */
+    private static final int INTERVALO_AUTO = 2600;
+
+    /** Piscadas do destaque da linha vencedora. */
+    private static final int PISCADAS_VITORIA = 6;
+    private static final int INTERVALO_PISCADA = 250;
+
     private final TelaPrincipal tela;
-    private final Jogador jogador;
+    private Jogador jogador;
     private final MotorDoJogo motor;
 
     /** Timers de animação de cada coluna (um por coluna). */
@@ -44,11 +52,15 @@ public class ControladorJogo {
     /** Timers responsáveis por parar cada coluna no tempo certo. */
     private final Timer[] timersParada = new Timer[MotorDoJogo.COLUNAS];
 
-    /** Quantidade de colunas que já pararam no giro atual. */
-    private int colunasParadas;
+    /** Timer que dispara giros automáticos no modo AUTO. */
+    private Timer timerAuto;
 
-    /** Indica se um giro está em andamento (bloqueia novos acionamentos). */
+    /** Timer que faz a linha vencedora piscar. */
+    private Timer timerPiscar;
+
+    private int colunasParadas;
     private boolean girando;
+    private boolean modoAuto;
 
     public ControladorJogo(TelaPrincipal tela, Jogador jogador, MotorDoJogo motor) {
         this.tela = tela;
@@ -59,19 +71,23 @@ public class ControladorJogo {
 
     /** Configura estado inicial da tela e registra os escutadores de eventos. */
     private void inicializar() {
+        tela.getComboDificuldade().setSelectedItem(motor.getDificuldade());
         atualizarPainelInformacoes();
         tela.atualizarUltimoGanho(0.0);
 
         tela.getBtnGirar().addActionListener(e -> aoClicarGirar());
         tela.getBtnMaxBet().addActionListener(e -> aoClicarMaxBet());
+        tela.getBtnAuto().addActionListener(e -> aoAlternarAuto());
         tela.getBtnAumentarAposta().addActionListener(e -> aoAjustarAposta(PASSO_APOSTA));
         tela.getBtnDiminuirAposta().addActionListener(e -> aoAjustarAposta(-PASSO_APOSTA));
+        tela.getComboDificuldade().addActionListener(e -> aoTrocarDificuldade());
     }
 
-    /** Atualiza os rótulos de saldo e aposta na tela. */
+    /** Atualiza os rótulos de saldo, aposta e rodadas grátis na tela. */
     private void atualizarPainelInformacoes() {
         tela.atualizarSaldo(jogador.getSaldo());
         tela.atualizarAposta(jogador.getAposta());
+        tela.atualizarRodadasGratis(jogador.getRodadasGratis());
     }
 
     // ---- Eventos ----
@@ -93,13 +109,76 @@ public class ControladorJogo {
     }
 
     /**
-     * Trata o clique em GIRAR: valida saldo, debita a aposta e inicia a animação.
+     * Troca a dificuldade: reinicia a partida (novo saldo) para valer o novo
+     * nível. Pergunta ao jogador para evitar reinício acidental.
+     */
+    private void aoTrocarDificuldade() {
+        if (girando) {
+            return;
+        }
+        Dificuldade escolhida = (Dificuldade) tela.getComboDificuldade().getSelectedItem();
+        if (escolhida == motor.getDificuldade()) {
+            return;
+        }
+        int opcao = JOptionPane.showConfirmDialog(tela,
+                "Trocar a dificuldade reinicia o jogo com um novo saldo.\nDeseja continuar?",
+                "Alterar dificuldade",
+                JOptionPane.YES_NO_OPTION);
+        if (opcao == JOptionPane.YES_OPTION) {
+            pararAuto();
+            motor.setDificuldade(escolhida);
+            jogador = new Jogador(escolhida);
+            tela.limparDestaques();
+            tela.atualizarUltimoGanho(0.0);
+            tela.exibirMensagem("Dificuldade: " + escolhida.getRotulo() + ". Boa sorte!");
+            atualizarPainelInformacoes();
+        } else {
+            // desfaz a seleção visual
+            tela.getComboDificuldade().setSelectedItem(motor.getDificuldade());
+        }
+    }
+
+    /** Liga/desliga o modo automático de giros. */
+    private void aoAlternarAuto() {
+        if (modoAuto) {
+            pararAuto();
+            return;
+        }
+        modoAuto = true;
+        tela.setTextoBotaoAuto("PARAR");
+        // dispara o primeiro giro imediatamente e agenda os próximos
+        if (!girando) {
+            aoClicarGirar();
+        }
+        timerAuto = new Timer(INTERVALO_AUTO, e -> {
+            if (!girando && jogador.podeGirar()) {
+                aoClicarGirar();
+            } else if (!jogador.podeGirar()) {
+                pararAuto();
+            }
+        });
+        timerAuto.start();
+    }
+
+    /** Interrompe o modo automático. */
+    private void pararAuto() {
+        modoAuto = false;
+        tela.setTextoBotaoAuto("AUTO");
+        if (timerAuto != null) {
+            timerAuto.stop();
+        }
+    }
+
+    /**
+     * Trata o clique em GIRAR: valida saldo/rodadas, debita a aposta (quando
+     * pago) e inicia a animação.
      */
     private void aoClicarGirar() {
         if (girando) {
             return;
         }
-        if (!jogador.temSaldoSuficiente()) {
+        if (!jogador.podeGirar()) {
+            pararAuto();
             JOptionPane.showMessageDialog(tela,
                     "Créditos insuficientes para esta aposta!\n"
                             + "Saldo atual: R$ " + String.format("%.2f", jogador.getSaldo()),
@@ -108,19 +187,26 @@ public class ControladorJogo {
             return;
         }
 
-        jogador.debitarAposta();
+        tela.limparDestaques();
+        pararPiscar();
+
+        boolean rodadaGratis = jogador.temRodadasGratis();
+        if (rodadaGratis) {
+            jogador.consumirRodadaGratis();
+            tela.exibirMensagem("Rodada GRÁTIS! Girando...");
+        } else {
+            jogador.debitarAposta();
+            tela.exibirMensagem("Girando...");
+        }
+
         atualizarPainelInformacoes();
-        tela.exibirMensagem("Girando...");
+        Som.tocarGiro();
         motor.sortearGrade();
         iniciarAnimacao();
     }
 
     // ---- Animação com Timer ----
 
-    /**
-     * Inicia a animação de todas as colunas. Cada coluna troca de imagem
-     * ciclicamente e para em um tempo diferente (parada progressiva).
-     */
     private void iniciarAnimacao() {
         girando = true;
         colunasParadas = 0;
@@ -133,24 +219,14 @@ public class ControladorJogo {
 
     /** Configura e inicia os timers de uma coluna específica. */
     private void iniciarAnimacaoColuna(final int coluna) {
-        // Timer de animação: troca imagens aleatórias rapidamente
-        timersColuna[coluna] = new Timer(INTERVALO_TROCA, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                for (int linha = 0; linha < MotorDoJogo.LINHAS; linha++) {
-                    tela.exibirIcone(linha, coluna, motor.sortearSimbolo());
-                }
+        timersColuna[coluna] = new Timer(INTERVALO_TROCA, e -> {
+            for (int linha = 0; linha < MotorDoJogo.LINHAS; linha++) {
+                tela.exibirIcone(linha, coluna, motor.sortearSimbolo());
             }
         });
         timersColuna[coluna].start();
 
-        // Timer de parada: dispara uma única vez no tempo da coluna
-        timersParada[coluna] = new Timer(TEMPO_PARADA_COLUNA[coluna], new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                pararColuna(coluna);
-            }
-        });
+        timersParada[coluna] = new Timer(TEMPO_PARADA_COLUNA[coluna], e -> pararColuna(coluna));
         timersParada[coluna].setRepeats(false);
         timersParada[coluna].start();
     }
@@ -167,27 +243,68 @@ public class ControladorJogo {
         }
     }
 
-    /** Ao parar todas as colunas: calcula prêmio, credita e atualiza a tela. */
+    /** Ao parar todas as colunas: avalia, credita prêmio/free spins e atualiza a tela. */
     private void finalizarGiro() {
-        double premio = motor.calcularPremio(jogador.getAposta());
-        if (premio > 0) {
-            jogador.creditarPremio(premio);
-            tela.exibirMensagem(String.format("VITÓRIA! Você ganhou R$ %.2f", premio));
+        ResultadoGiro resultado = motor.avaliarGiro(jogador.getAposta());
+
+        if (resultado.houveVitoria()) {
+            jogador.creditarPremio(resultado.getPremio());
+            Som.tocarVitoria();
+            piscarVencedoras(resultado);
+            tela.exibirMensagem(String.format("VITÓRIA! Você ganhou R$ %.2f", resultado.getPremio()));
         } else {
             tela.exibirMensagem("Não foi dessa vez. Tente novamente!");
         }
-        tela.atualizarUltimoGanho(premio);
+
+        if (resultado.getRodadasGratis() > 0) {
+            jogador.adicionarRodadasGratis(resultado.getRodadasGratis());
+            Som.tocarBonus();
+            tela.exibirMensagem(String.format(
+                    "BÔNUS! %d rodadas grátis conquistadas!", resultado.getRodadasGratis()));
+        }
+
+        tela.atualizarUltimoGanho(resultado.getPremio());
         atualizarPainelInformacoes();
 
         girando = false;
         tela.getBtnGirar().setEnabled(true);
 
-        // Aviso amigável caso o jogador fique sem saldo para a menor aposta
-        if (jogador.getSaldo() < Jogador.APOSTA_MINIMA) {
+        if (!jogador.podeGirar()) {
+            pararAuto();
             JOptionPane.showMessageDialog(tela,
                     "Seus créditos acabaram! Obrigado por jogar.",
                     "Fim dos créditos",
                     JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    // ---- Destaque da linha vencedora (piscar) ----
+
+    /** Faz as células vencedoras piscarem algumas vezes. */
+    private void piscarVencedoras(ResultadoGiro resultado) {
+        pararPiscar();
+        final boolean[] aceso = {true};
+        final int[] contador = {0};
+        timerPiscar = new Timer(INTERVALO_PISCADA, e -> {
+            aceso[0] = !aceso[0];
+            for (ResultadoGiro.Posicao p : resultado.getPosicoesVencedoras()) {
+                tela.destacarCelula(p.linha, p.coluna, aceso[0]);
+            }
+            contador[0]++;
+            if (contador[0] >= PISCADAS_VITORIA) {
+                pararPiscar();
+                // deixa aceso ao final
+                for (ResultadoGiro.Posicao p : resultado.getPosicoesVencedoras()) {
+                    tela.destacarCelula(p.linha, p.coluna, true);
+                }
+            }
+        });
+        timerPiscar.start();
+    }
+
+    private void pararPiscar() {
+        if (timerPiscar != null) {
+            timerPiscar.stop();
         }
     }
 }

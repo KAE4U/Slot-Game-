@@ -15,11 +15,11 @@ import java.awt.Color;
  */
 public enum Simbolo {
 
-    GAVIAO("Gavião da Fiel", "gaviao.jpg", 100, new Color(30, 30, 30)),
-    MOSQUETEIRO("Mosqueteiro", "mosqueteiro.jpg", 50, new Color(60, 60, 60)),
-    SIMBOLO_ANTIGO("Símbolo Antigo", "simbolo_antigo.png", 30, new Color(90, 90, 90)),
-    LOGO("Escudo Oficial", "logo.png", 20, new Color(120, 120, 120)),
-    MEMPHIS("Memphis", "memphis.jpeg", 15, new Color(150, 150, 150));
+    GAVIAO("Gavião da Fiel", "gaviao.jpg", 25, new Color(70, 72, 80)),
+    MOSQUETEIRO("Mosqueteiro", "mosqueteiro.jpg", 12, new Color(84, 86, 94)),
+    SIMBOLO_ANTIGO("Símbolo Antigo", "simbolo_antigo.png", 8, new Color(98, 100, 108)),
+    LOGO("Escudo Oficial", "logo.png", 5, new Color(112, 114, 122)),
+    MEMPHIS("Memphis", "memphis.jpeg", 3, new Color(126, 128, 136));
 
     /** Pasta base dos recursos de imagem dentro do classpath. */
     public static final String PASTA_IMAGENS = "/recursos/imagens/";
