@@ -80,6 +80,8 @@ public class ControladorJogo {
         tela.getBtnAuto().addActionListener(e -> aoAlternarAuto());
         tela.getBtnAumentarAposta().addActionListener(e -> aoAjustarAposta(PASSO_APOSTA));
         tela.getBtnDiminuirAposta().addActionListener(e -> aoAjustarAposta(-PASSO_APOSTA));
+        tela.getBtnDepositar().addActionListener(e -> aoDepositar());
+        tela.getBtnSacar().addActionListener(e -> aoSacar());
         tela.getComboDificuldade().addActionListener(e -> aoTrocarDificuldade());
     }
 
@@ -106,6 +108,76 @@ public class ControladorJogo {
         }
         jogador.apostarMaximo();
         atualizarPainelInformacoes();
+    }
+
+    // ---- Carteira (depósito e saque de créditos fictícios) ----
+
+    /** Solicita um valor e deposita créditos fictícios no saldo. */
+    private void aoDepositar() {
+        if (girando) {
+            return;
+        }
+        Double valor = pedirValor("Digite o valor a depositar (R$):", "Depositar");
+        if (valor == null) {
+            return; // cancelado ou inválido (mensagem já exibida)
+        }
+        if (jogador.depositar(valor)) {
+            atualizarPainelInformacoes();
+            tela.exibirMensagem(String.format("Depósito de R$ %.2f realizado!", valor));
+        }
+    }
+
+    /** Solicita um valor e saca (retira) créditos fictícios do saldo. */
+    private void aoSacar() {
+        if (girando) {
+            return;
+        }
+        Double valor = pedirValor("Digite o valor a sacar (R$):", "Sacar");
+        if (valor == null) {
+            return;
+        }
+        if (jogador.sacar(valor)) {
+            atualizarPainelInformacoes();
+            tela.exibirMensagem(String.format("Saque de R$ %.2f realizado!", valor));
+        } else {
+            JOptionPane.showMessageDialog(tela,
+                    "Não é possível sacar esse valor.\n"
+                            + "Saldo disponível: R$ " + String.format("%.2f", jogador.getSaldo()),
+                    "Saque inválido",
+                    JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    /**
+     * Exibe um diálogo pedindo um valor monetário e o valida.
+     *
+     * @return o valor informado (positivo) ou {@code null} se o usuário
+     *         cancelar ou digitar um valor inválido
+     */
+    private Double pedirValor(String mensagem, String titulo) {
+        String entrada = JOptionPane.showInputDialog(tela, mensagem, titulo,
+                JOptionPane.QUESTION_MESSAGE);
+        if (entrada == null) {
+            return null; // cancelado
+        }
+        entrada = entrada.trim().replace(",", "."); // aceita vírgula decimal
+        try {
+            double valor = Double.parseDouble(entrada);
+            if (valor <= 0) {
+                JOptionPane.showMessageDialog(tela,
+                        "Informe um valor maior que zero.",
+                        "Valor inválido",
+                        JOptionPane.WARNING_MESSAGE);
+                return null;
+            }
+            return valor;
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(tela,
+                    "Valor inválido. Digite apenas números (ex.: 50 ou 50,00).",
+                    "Valor inválido",
+                    JOptionPane.WARNING_MESSAGE);
+            return null;
+        }
     }
 
     /**

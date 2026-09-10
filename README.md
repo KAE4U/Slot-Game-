@@ -20,6 +20,8 @@ temática de futebol da torcida alvinegra (Corinthians). Trabalho da disciplina 
 - 💚 **Destaque da linha vencedora**: as células que formaram a combinação piscam.
 - 🎚️ **Dificuldade** (Fácil / Normal / Difícil): muda o saldo inicial e o retorno do jogo.
 - 🎁 **Rodadas Grátis (Free Spins)**: 3+ Gaviões na grade concedem 5 giros grátis.
+- 💰 **Carteira**: botões **Depositar** e **Sacar** para adicionar ou retirar
+  créditos fictícios do saldo (com validação de valores).
 
 ## 🏆 Símbolos e multiplicadores
 

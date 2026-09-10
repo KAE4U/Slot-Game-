@@ -100,4 +100,34 @@ public class Jogador {
     public void creditarPremio(double premio) {
         this.saldo += premio;
     }
+
+    /**
+     * Deposita créditos fictícios no saldo.
+     *
+     * @param valor quantia a adicionar (deve ser positiva)
+     * @return {@code true} se o depósito foi realizado; {@code false} se o
+     *         valor for inválido (menor ou igual a zero)
+     */
+    public boolean depositar(double valor) {
+        if (valor <= 0) {
+            return false;
+        }
+        this.saldo += valor;
+        return true;
+    }
+
+    /**
+     * Saca (retira) créditos fictícios do saldo.
+     *
+     * @param valor quantia a retirar (deve ser positiva e não maior que o saldo)
+     * @return {@code true} se o saque foi realizado; {@code false} se o valor
+     *         for inválido ou maior que o saldo disponível
+     */
+    public boolean sacar(double valor) {
+        if (valor <= 0 || valor > saldo) {
+            return false;
+        }
+        this.saldo -= valor;
+        return true;
+    }
 }

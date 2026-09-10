@@ -47,6 +47,8 @@ public class TelaPrincipal extends JFrame {
     private final JButton btnAuto = new JButton("AUTO");
     private final JButton btnAumentarAposta = new JButton("+");
     private final JButton btnDiminuirAposta = new JButton("−");
+    private final JButton btnDepositar = new JButton("Depositar");
+    private final JButton btnSacar = new JButton("Sacar");
     private final JComboBox<Dificuldade> comboDificuldade = new JComboBox<>(Dificuldade.values());
     private final JLabel lblSaldo = new JLabel();
     private final JLabel lblAposta = new JLabel();
@@ -99,7 +101,10 @@ public class TelaPrincipal extends JFrame {
         titulo.setForeground(Tema.TEXTO);
         painel.add(titulo, BorderLayout.CENTER);
 
-        // Saldo em destaque no topo direito
+        // Bloco de carteira no topo direito: saldo + botões Depositar/Sacar
+        JPanel painelCarteira = new JPanel(new BorderLayout(0, 6));
+        painelCarteira.setOpaque(false);
+
         JPanel painelSaldo = new JPanel(new BorderLayout());
         painelSaldo.setOpaque(false);
         JLabel rotuloSaldo = new JLabel("SALDO", SwingConstants.CENTER);
@@ -110,7 +115,19 @@ public class TelaPrincipal extends JFrame {
         lblSaldo.setFont(new Font("SansSerif", Font.BOLD, 24));
         painelSaldo.add(rotuloSaldo, BorderLayout.NORTH);
         painelSaldo.add(lblSaldo, BorderLayout.CENTER);
-        painel.add(painelSaldo, BorderLayout.EAST);
+
+        JPanel painelBotoesCarteira = new JPanel(new GridLayout(1, 2, 6, 0));
+        painelBotoesCarteira.setOpaque(false);
+        estilizarBotao(btnDepositar);
+        estilizarBotao(btnSacar);
+        btnDepositar.setFont(new Font("SansSerif", Font.BOLD, 13));
+        btnSacar.setFont(new Font("SansSerif", Font.BOLD, 13));
+        painelBotoesCarteira.add(btnDepositar);
+        painelBotoesCarteira.add(btnSacar);
+
+        painelCarteira.add(painelSaldo, BorderLayout.CENTER);
+        painelCarteira.add(painelBotoesCarteira, BorderLayout.SOUTH);
+        painel.add(painelCarteira, BorderLayout.EAST);
 
         return painel;
     }
@@ -315,6 +332,14 @@ public class TelaPrincipal extends JFrame {
 
     public JButton getBtnDiminuirAposta() {
         return btnDiminuirAposta;
+    }
+
+    public JButton getBtnDepositar() {
+        return btnDepositar;
+    }
+
+    public JButton getBtnSacar() {
+        return btnSacar;
     }
 
     public JComboBox<Dificuldade> getComboDificuldade() {
