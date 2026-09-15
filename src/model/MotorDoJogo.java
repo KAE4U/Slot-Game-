@@ -114,27 +114,24 @@ public class MotorDoJogo {
         // Linhas horizontais
         for (int linha = 0; linha < LINHAS; linha++) {
             if (tresIguais(grade[linha][0], grade[linha][1], grade[linha][2])) {
-                resultado.adicionarPremio(aposta * grade[linha][0].getMultiplicador() * fator);
-                resultado.marcarPosicao(linha, 0);
-                resultado.marcarPosicao(linha, 1);
-                resultado.marcarPosicao(linha, 2);
+                registrarVitoria(resultado, grade[linha][0], aposta, fator,
+                        "Linha " + (linha + 1),
+                        linha, 0, linha, 1, linha, 2);
             }
         }
 
         // Diagonal principal
         if (tresIguais(grade[0][0], grade[1][1], grade[2][2])) {
-            resultado.adicionarPremio(aposta * grade[0][0].getMultiplicador() * fator);
-            resultado.marcarPosicao(0, 0);
-            resultado.marcarPosicao(1, 1);
-            resultado.marcarPosicao(2, 2);
+            registrarVitoria(resultado, grade[0][0], aposta, fator,
+                    "Diagonal ↘",
+                    0, 0, 1, 1, 2, 2);
         }
 
         // Diagonal secundária
         if (tresIguais(grade[0][2], grade[1][1], grade[2][0])) {
-            resultado.adicionarPremio(aposta * grade[0][2].getMultiplicador() * fator);
-            resultado.marcarPosicao(0, 2);
-            resultado.marcarPosicao(1, 1);
-            resultado.marcarPosicao(2, 0);
+            registrarVitoria(resultado, grade[0][2], aposta, fator,
+                    "Diagonal ↙",
+                    0, 2, 1, 1, 2, 0);
         }
 
         // Rodadas grátis: contar quantos GAVIÕES apareceram na grade
@@ -143,6 +140,22 @@ public class MotorDoJogo {
         }
 
         return resultado;
+    }
+
+    /**
+     * Registra uma combinação vencedora no resultado: soma o prêmio, marca as
+     * três posições para destaque e guarda os detalhes (símbolo/multiplicador)
+     * usados no pop-up de vitória.
+     */
+    private void registrarVitoria(ResultadoGiro resultado, Simbolo simbolo, double aposta,
+            double fator, String descricaoLinha,
+            int l1, int c1, int l2, int c2, int l3, int c3) {
+        double premio = aposta * simbolo.getMultiplicador() * fator;
+        resultado.adicionarPremio(premio);
+        resultado.marcarPosicao(l1, c1);
+        resultado.marcarPosicao(l2, c2);
+        resultado.marcarPosicao(l3, c3);
+        resultado.adicionarCombinacao(simbolo, simbolo.getMultiplicador(), premio, descricaoLinha);
     }
 
     /** Conta quantas vezes um símbolo aparece na grade. */

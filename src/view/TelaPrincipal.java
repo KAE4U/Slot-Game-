@@ -220,34 +220,49 @@ public class TelaPrincipal extends JFrame {
         painel.setBackground(Tema.FUNDO);
         painel.setBorder(BorderFactory.createEmptyBorder(12, 6, 12, 16));
 
-        // Seletor de dificuldade
-        JPanel painelDif = new JPanel(new BorderLayout());
-        painelDif.setBackground(Tema.FUNDO);
-        painelDif.setBorder(tituloBorda("Dificuldade"));
+        // Seletor de dificuldade — compacto, para não poluir a lateral.
+        JLabel rotuloDif = new JLabel("Dificuldade:");
+        rotuloDif.setForeground(Tema.TEXTO_SUAVE);
+        rotuloDif.setFont(new Font("SansSerif", Font.PLAIN, 12));
+
         comboDificuldade.setBackground(Tema.FUNDO_PAINEL);
         comboDificuldade.setForeground(Tema.TEXTO);
-        painelDif.add(comboDificuldade, BorderLayout.CENTER);
+        comboDificuldade.setFont(new Font("SansSerif", Font.PLAIN, 12));
+
+        JPanel painelDif = new JPanel();
+        painelDif.setLayout(new BoxLayout(painelDif, BoxLayout.X_AXIS));
+        painelDif.setBackground(Tema.FUNDO);
+        painelDif.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
+        painelDif.add(rotuloDif);
+        painelDif.add(Box.createHorizontalStrut(6));
+        painelDif.add(comboDificuldade);
+        painelDif.add(Box.createHorizontalGlue());
+        // Mantém o combo baixo e sem esticar (evita o visual "grande e poluído").
+        painelDif.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         painelDif.setAlignmentX(LEFT_ALIGNMENT);
         painel.add(painelDif);
-        painel.add(Box.createVerticalStrut(12));
+        painel.add(Box.createVerticalStrut(14));
 
-        // Tabela de pagamentos
+        // Tabela de pagamentos — em destaque, com o ícone de cada símbolo.
         JPanel painelPag = new JPanel();
-        painelPag.setLayout(new BoxLayout(painelPag, BoxLayout.Y_AXIS));
-        painelPag.setBackground(Tema.FUNDO);
+        painelPag.setLayout(new GridLayout(0, 1, 0, 8));
+        painelPag.setBackground(Tema.FUNDO_PAINEL);
         painelPag.setBorder(tituloBorda("Tabela de Pagamentos"));
         for (Simbolo simbolo : Simbolo.values()) {
             JLabel linha = new JLabel(String.format(
-                    "3x %s = x%d", simbolo.getNomeExibicao(), simbolo.getMultiplicador()));
+                    "%s   x%d", simbolo.getNomeExibicao(), simbolo.getMultiplicador()));
+            linha.setIcon(new javax.swing.ImageIcon(carregadorImagens.getImagem(simbolo)
+                    .getScaledInstance(38, 38, java.awt.Image.SCALE_SMOOTH)));
+            linha.setIconTextGap(10);
             linha.setForeground(Tema.TEXTO);
-            linha.setFont(new Font("SansSerif", Font.PLAIN, 13));
-            linha.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+            linha.setFont(new Font("SansSerif", Font.BOLD, 16));
+            linha.setBorder(BorderFactory.createEmptyBorder(2, 6, 2, 6));
             painelPag.add(linha);
         }
         JLabel bonus = new JLabel("3x Gavião = 5 Rodadas Grátis");
         bonus.setForeground(Tema.VITORIA);
-        bonus.setFont(new Font("SansSerif", Font.BOLD, 12));
-        bonus.setBorder(BorderFactory.createEmptyBorder(6, 4, 4, 4));
+        bonus.setFont(new Font("SansSerif", Font.BOLD, 14));
+        bonus.setBorder(BorderFactory.createEmptyBorder(8, 6, 4, 6));
         painelPag.add(bonus);
         painelPag.setAlignmentX(LEFT_ALIGNMENT);
         painel.add(painelPag);
@@ -368,5 +383,11 @@ public class TelaPrincipal extends JFrame {
 
     public void exibirMensagem(String mensagem) {
         lblMensagem.setText(mensagem);
+    }
+
+    /** Exibe o pop-up de vitória com os ganhos e o multiplicador. */
+    public void exibirDialogoVitoria(model.ResultadoGiro resultado) {
+        DialogoVitoria dialogo = new DialogoVitoria(this, resultado);
+        dialogo.setVisible(true);
     }
 }

@@ -16,7 +16,10 @@ temática de futebol da torcida alvinegra (Corinthians). Trabalho da disciplina 
 ## ✨ Recursos extras
 
 - 🔁 **Modo AUTO**: gira automaticamente até você parar ou acabar o saldo.
-- 🔊 **Efeitos sonoros** sintetizados (giro, vitória e bônus) — sem arquivos externos.
+- 🔊 **Efeitos sonoros**: o **Hino do Corinthians (instrumental)** toca ao vencer,
+  além dos sons sintetizados de giro e bônus.
+- 🏅 **Pop-up de vitória**: ao ganhar, uma janela mostra o valor total, o maior
+  multiplicador e o detalhamento de cada combinação vencedora.
 - 💚 **Destaque da linha vencedora**: as células que formaram a combinação piscam.
 - 🎚️ **Dificuldade** (Fácil / Normal / Difícil): muda o saldo inicial e o retorno do jogo.
 - 🎁 **Rodadas Grátis (Free Spins)**: 3+ Gaviões na grade concedem 5 giros grátis.
@@ -51,11 +54,13 @@ src/
 │   ├── TelaPrincipal.java        # JFrame (BorderLayout + GridLayout)
 │   ├── CelulaSimbolo.java        # Célula que desenha a imagem em fill + destaque
 │   ├── CarregadorImagens.java    # getResource() com fallback desenhado
+│   ├── DialogoVitoria.java       # Pop-up de vitória (ganhos + multiplicador)
 │   ├── Tema.java                 # Paleta de cores (cinza-carvão + branco)
-│   └── Som.java                  # Efeitos sonoros sintetizados
+│   └── Som.java                  # Hino de vitória (WAV) + sons sintetizados
 ├── controller/
 │   └── ControladorJogo.java      # Eventos + animação + AUTO + free spins
-└── recursos/imagens/             # Imagens dos símbolos
+├── recursos/imagens/             # Imagens dos símbolos
+└── recursos/audio/               # Hino do Corinthians (WAV)
 ```
 
 ### Requisitos técnicos atendidos
@@ -86,3 +91,11 @@ java -cp build Main
 > As imagens ficam em `src/recursos/imagens/`. Caso alguma não seja encontrada,
 > o jogo desenha automaticamente um ícone de reserva (fallback), garantindo que
 > a aplicação continue funcionando.
+
+## 🎵 Sobre o áudio de vitória
+
+O Java SE puro (`javax.sound.sampled`) **não reproduz MP4/MP3 nativamente**.
+Por isso, o arquivo enviado `Hino do Corinthians Instrumental.mp4` foi convertido
+para **WAV (PCM)** em `src/recursos/audio/hino_vitoria.wav`, formato que o Java
+toca de forma nativa e portável, sem bibliotecas externas. O carregamento usa
+caminho relativo (`getResourceAsStream`) e a reprodução é feita com um `Clip`.

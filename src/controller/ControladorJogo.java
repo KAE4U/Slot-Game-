@@ -261,6 +261,7 @@ public class ControladorJogo {
 
         tela.limparDestaques();
         pararPiscar();
+        Som.pararVitoria(); // interrompe o hino de uma vitória anterior
 
         boolean rodadaGratis = jogador.temRodadasGratis();
         if (rodadaGratis) {
@@ -319,9 +320,10 @@ public class ControladorJogo {
     private void finalizarGiro() {
         ResultadoGiro resultado = motor.avaliarGiro(jogador.getAposta());
 
-        if (resultado.houveVitoria()) {
+        boolean venceu = resultado.houveVitoria();
+        if (venceu) {
             jogador.creditarPremio(resultado.getPremio());
-            Som.tocarVitoria();
+            Som.tocarVitoria(); // toca o Hino do Corinthians (WAV)
             piscarVencedoras(resultado);
             tela.exibirMensagem(String.format("VITÓRIA! Você ganhou R$ %.2f", resultado.getPremio()));
         } else {
@@ -340,6 +342,11 @@ public class ControladorJogo {
 
         girando = false;
         tela.getBtnGirar().setEnabled(true);
+
+        // Pop-up de vitória com ganhos e multiplicador (após atualizar a tela).
+        if (venceu) {
+            javax.swing.SwingUtilities.invokeLater(() -> tela.exibirDialogoVitoria(resultado));
+        }
 
         if (!jogador.podeGirar()) {
             pararAuto();
